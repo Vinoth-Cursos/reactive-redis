@@ -1,0 +1,8 @@
+# Configuración de ejemplo para Quarkus en YAML
+quarkus:
+  http:
+    port: 8080
+  mongodb:
+    connection-string: "mongodb+srv://chatgpt:chatgpt@cluster1.km8zme5.mongodb.net/quarkus-reactive-redis-kafka?retryWrites=true"
+  datasource:
+    db-name: quarkusdb

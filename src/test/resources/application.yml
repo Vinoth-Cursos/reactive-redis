@@ -1,0 +1,12 @@
+# Test config: disable devservices for mongodb to avoid Docker/Testcontainers at test discovery
+quarkus:
+  devservices:
+    mongodb:
+      enabled: false
+
+# Reduce logging config to avoid NullPointerException in logging setup
+quarkus.log:
+  category:
+    "":
+      level: INFO
+
