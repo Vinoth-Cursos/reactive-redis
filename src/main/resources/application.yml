@@ -2,7 +2,14 @@
 quarkus:
   http:
     port: 8080
+
   mongodb:
-    connection-string: "mongodb+srv://chatgpt:chatgpt@cluster1.km8zme5.mongodb.net/quarkus-reactive-redis-kafka?retryWrites=true"
-  datasource:
-    db-name: quarkusdb
+    connection-string: "mongodb://joffre:joffre@ac-xyz-shard-00-00.c9yhl.mongodb.net:27017,ac-xyz-shard-00-01.c9yhl.mongodb.net:27017,ac-xyz-shard-00-02.c9yhl.mongodb.net:27017/quarkus-reactive-redis-kafka?ssl=true&replicaSet=atlas-xyz-shard-0&authSource=admin&retryWrites=true&w=majority"
+
+  kafka:
+    devservices:
+      enabled: false
+
+  redis:
+    devservices:
+      enabled: false

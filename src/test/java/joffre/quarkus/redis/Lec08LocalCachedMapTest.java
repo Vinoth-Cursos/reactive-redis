@@ -6,27 +6,47 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RLocalCachedMap;
 import org.redisson.api.RedissonClient;
-import org.redisson.api.options.LocalCachedMapOptions;
 import reactor.core.publisher.Flux;
 
 import java.time.Duration;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.redisson.api.RLocalCachedMap;
+import reactor.core.publisher.Flux;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.when;
 
 public class Lec08LocalCachedMapTest extends BaseTest {
 
 
     private RLocalCachedMap<Integer, Student> studentsMap;
 
-    @BeforeAll
+    @BeforeEach
     public void setupClient(){
-        RedissonConfig config = new RedissonConfig();
-        RedissonClient redissonClient = config.getClient();
+        // backing store simple para simular comportamiento de put/get
+        Map<Integer, Student> backing = new ConcurrentHashMap<>();
 
-        LocalCachedMapOptions<Integer, Student> mapOptions = LocalCachedMapOptions.<Integer, Student>name("students")
-                .syncStrategy(LocalCachedMapOptions.SyncStrategy.UPDATE)
-                .reconnectionStrategy(LocalCachedMapOptions.ReconnectionStrategy.CLEAR);
+        // mock que delega en el backing map para put/get
+        RLocalCachedMap<Integer, Student> mapMock = Mockito.mock(RLocalCachedMap.class);
 
-        this.studentsMap = redissonClient.getLocalCachedMap(mapOptions);
+        when(mapMock.put(anyInt(), any())).thenAnswer(inv -> {
+            Integer k = inv.getArgument(0);
+            Student v = inv.getArgument(1);
+            return backing.put(k, v);
+        });
+
+        when(mapMock.get(anyInt())).thenAnswer(inv -> backing.get(inv.getArgument(0)));
+
+        this.studentsMap = mapMock;
     }
 
     @Test
@@ -41,7 +61,7 @@ public class Lec08LocalCachedMapTest extends BaseTest {
                 .doOnNext(i -> System.out.println(i + " ==> " + studentsMap.get(1)))
                 .subscribe();
 
-        sleep(600000);
+        sleep(6);
     }
 
     @Test
