@@ -1,12 +1,10 @@
-package joffre.quarkus.kafka.sec02;
-
+package joffre.quarkus.kafka.sec05;
 
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -22,55 +20,41 @@ import reactor.kafka.sender.SenderRecord;
 import java.time.Duration;
 import java.util.Map;
 
-/*
-    goal: demo a simple kafka producer using reactor-kafka (Quarkus style)
- */
 @ApplicationScoped
-public class KafkaProducer {
-
+public class Lec01KafkaProducer {
     private static final Logger log =
-            LoggerFactory.getLogger(KafkaProducer.class);
+            LoggerFactory.getLogger(Lec01KafkaProducer.class);
 
     private KafkaSender<String, String> sender;
     private Disposable subscription;
 
     void onStart(@Observes StartupEvent ev) {
 
-        log.info("Starting Reactor Kafka Producer (Quarkus)");
-
         var producerConfig = Map.<String, Object>of(
-                //    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092",
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:8081",
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:8081",
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-                ProducerConfig.ACKS_CONFIG, "all"
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class
         );
 
         var options = SenderOptions.<String, String>create(producerConfig);
-
         sender = KafkaSender.create(options);
 
-        var flux = Flux.interval(Duration.ofMillis(100))
-                .take(15)
-                .map(i ->
-                        new ProducerRecord<>(
-                                "order-events",
-                                i.toString(),
-                                "order-" + i
-                        )
-                )
+        var flux = Flux.interval(Duration.ofMillis(50))
+                .take(30)
+                .map(i -> new ProducerRecord<>(
+                        "order-events",
+                        i.toString(),
+                        "order-" + i
+                ))
                 .map(pr -> SenderRecord.create(pr, pr.key()));
 
         subscription = sender.send(flux)
+                .doOnSubscribe(s ->
+                        log.info("Kafka producer started"))
                 .doOnNext(r ->
-                        log.info(
-                                "Message sent | topic={}, key={}, correlation={}",
-                                r.recordMetadata().topic(),
-                                r.correlationMetadata(),
-                                r.correlationMetadata()
-                        )
-                )
-                .doOnError(e -> log.error("Kafka producer error", e))
+                        log.info("Message sent | correlationId={}", r.correlationMetadata()))
+                .doOnError(e ->
+                        log.error("Kafka producer error", e))
                 .doOnComplete(() ->
                         log.info("Kafka producer finished sending messages"))
                 .subscribe();
@@ -79,11 +63,9 @@ public class KafkaProducer {
     @PreDestroy
     void shutdown() {
         log.info("Shutting down Kafka producer");
-
         if (subscription != null && !subscription.isDisposed()) {
             subscription.dispose();
         }
-
         if (sender != null) {
             sender.close();
         }

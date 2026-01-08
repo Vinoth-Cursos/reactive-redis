@@ -1,4 +1,4 @@
-package joffre.quarkus.kafka;
+package joffre.quarkus.kafka.sec04;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,13 +20,14 @@ import java.util.Map;
 public class KafkaSeekConsumer {
 
     private static final Logger log =
-            LoggerFactory.getLogger(KafkaSeekConsumer.class);
+            LoggerFactory.getLogger(KafkaSeekConsumer.class);   
     private Disposable subscription;
 
     void onStart(@Observes StartupEvent ev) {
 
         var consumerConfig = Map.<String, Object>of(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092",
+                //    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092",
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:8081",
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
                 ConsumerConfig.GROUP_ID_CONFIG, "demo-group-123",

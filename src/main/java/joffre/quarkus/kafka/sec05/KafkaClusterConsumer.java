@@ -1,4 +1,4 @@
-package joffre.quarkus.kafka.sec01;
+package joffre.quarkus.kafka.sec05;
 
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PreDestroy;
@@ -16,45 +16,40 @@ import reactor.kafka.receiver.ReceiverOptions;
 
 import java.util.List;
 import java.util.Map;
-/*
-  goal: to demo a simple kafka consumer using reactor kafka
-  producer ----> kafka broker <----------> consumer
 
-  topic: order-events
-  partitions: 1
-  log-end-offset: 15
-  current-offset: 15
-
- */
 @ApplicationScoped
-public class Lec01KafkaConsumer {
-
+public class KafkaClusterConsumer {
     private static final Logger log =
-            LoggerFactory.getLogger(Lec01KafkaConsumer.class);
+            LoggerFactory.getLogger(KafkaClusterConsumer.class);
 
-    // 👇 ESTE CAMPO FALTABA
     private Disposable subscription;
 
     void onStart(@Observes StartupEvent ev) {
 
         var consumerConfig = Map.<String, Object>of(
-            //    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092",
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:8081",
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-                ConsumerConfig.GROUP_ID_CONFIG, "demo-group-123",
+                ConsumerConfig.GROUP_ID_CONFIG, "demo-group",
+                ConsumerConfig.GROUP_INSTANCE_ID_CONFIG, "1",
                 ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"
         );
 
-        var options = ReceiverOptions.create(consumerConfig)
+        var options = ReceiverOptions.<String, String>create(consumerConfig)
                 .subscription(List.of("order-events"));
 
         subscription = KafkaReceiver.create(options)
                 .receive()
                 .doOnSubscribe(s ->
-                        log.info("Kafka consumer subscribed to topic order-events"))
+                        log.info("Kafka cluster consumer started"))
                 .doOnNext(r -> {
-                    log.info("key={}, value={}", r.key(), r.value());
+                    log.info(
+                            "key={}, value={}, partition={}, offset={}",
+                            r.key(),
+                            r.value(),
+                            r.partition(),
+                            r.offset()
+                    );
                     r.receiverOffset().acknowledge();
                 })
                 .doOnError(e ->
@@ -65,7 +60,7 @@ public class Lec01KafkaConsumer {
     @PreDestroy
     void shutdown() {
         if (subscription != null && !subscription.isDisposed()) {
-            log.info("Shutting down Kafka consumer");
+            log.info("Shutting down Kafka cluster consumer");
             subscription.dispose();
         }
     }

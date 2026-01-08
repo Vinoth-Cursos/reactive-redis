@@ -5,6 +5,7 @@ import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -36,7 +37,8 @@ public class KafkaProducer {
         log.info("Starting Kafka backpressure producer (Quarkus)");
 
         var producerConfig = Map.<String, Object>of(
-                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092",
+                //    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092",
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:8081",
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
                 ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
                 ProducerConfig.ACKS_CONFIG, "all"
@@ -47,7 +49,7 @@ public class KafkaProducer {
 
         sender = KafkaSender.create(options);
 
-        var flux = Flux.range(1, 180)
+        var flux = Flux.range(1, 30)
                 .map(i ->
                         new ProducerRecord<>(
                                 "order-events",
@@ -62,7 +64,7 @@ public class KafkaProducer {
         subscription = sender.send(flux)
                 .doOnNext(r -> {
                     if (r.correlationMetadata() != null &&
-                            Integer.parseInt(r.correlationMetadata()) % 180== 0) {
+                            Integer.parseInt(r.correlationMetadata()) % 30== 0) {
                         log.info("Sent message {}", r.correlationMetadata());
                     }
                 })
