@@ -1,4 +1,4 @@
-# Configuración de ejemplo para Quarkus en YAML
+# Configuración de ejemplo para Quarkus en YAML  kafka-topics.sh --bootstrap-server localhost:9092 --topic order-events --describe
 quarkus:
   http:
     port: 8080
